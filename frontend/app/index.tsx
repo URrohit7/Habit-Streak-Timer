@@ -13,11 +13,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { format } from 'date-fns';
 import TimeSlotCard from '../components/TimeSlotCard';
 import DailyReflectionSection from '../components/DailyReflectionSection';
 import TimerBottomSheet from '../components/TimerBottomSheet';
+import StreakAnimation from '../components/StreakAnimation';
+import FloatingTimer from '../components/FloatingTimer';
 import { useTimerStore } from '../store/timerStore';
+import { useRouter } from 'expo-router';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -32,19 +36,30 @@ const DEFAULT_SUBJECTS = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [tracker, setTracker] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [streak, setStreak] = useState(0);
   const [showTimer, setShowTimer] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(-1);
+  const [showStreakAnimation, setShowStreakAnimation] = useState(false);
+  const [showFloatingTimer, setShowFloatingTimer] = useState(false);
+  const [todayStudyHours, setTodayStudyHours] = useState('0h 0m');
   
-  const { isRunning, timerName } = useTimerStore();
+  const { isRunning, timerName, startTimer } = useTimerStore();
 
   useEffect(() => {
     loadTracker();
     loadStreak();
+    calculateTodayStudyHours();
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (tracker) {
+      calculateTodayStudyHours();
+    }
+  }, [tracker]);
 
   const loadTracker = async () => {
     try {
@@ -148,7 +163,23 @@ export default function HomeScreen() {
     setShowTimer(true);
   };
 
-  const markDayComplete = async () => {
+  const calculateTodayStudyHours = () => {
+    if (!tracker || !tracker.timeSlots) {
+      setTodayStudyHours('0h 0m');
+      return;
+    }
+    
+    const totalSeconds = tracker.timeSlots.reduce(
+      (sum: number, slot: any) => sum + (slot.timeSpent || 0),
+      0
+    );
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    setTodayStudyHours(`${hours}h ${minutes}m`);
+  };
+
+  const markDayComplete = () => {
     Alert.alert(
       'Mark Day Complete',
       `Are you sure you want to mark ${selectedDate} as complete?`,
@@ -162,9 +193,14 @@ export default function HomeScreen() {
                 method: 'POST',
               });
               const data = await response.json();
-              Alert.alert('🎉 Success!', `${data.message}\n\nCurrent Streak: ${data.streak} days 🔥`);
-              loadStreak();
-              loadTracker();
+              
+              // Update local state
+              await loadStreak();
+              await loadTracker();
+              
+              // Show Duolingo-style streak animation
+              setStreak(data.streak);
+              setShowStreakAnimation(true);
             } catch (error) {
               console.error('Error marking complete:', error);
               Alert.alert('Error', 'Failed to mark day complete');
@@ -199,13 +235,21 @@ export default function HomeScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Study Tracker</Text>
+          <LinearGradient
+            colors={['#6366f1', '#8b5cf6', '#d946ef']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            <View>
+              <Text style={styles.title}>Study Tracker</Text>
+              <Text style={styles.subtitle}>Today: {todayStudyHours}</Text>
+            </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={20} color="#ff6b35" />
               <Text style={styles.streakText}>{streak} Day Streak</Text>
             </View>
-          </View>
+          </LinearGradient>
 
           {/* Date & Day */}
           <View style={styles.card}>
@@ -322,7 +366,12 @@ export default function HomeScreen() {
         {/* Timer Bottom Sheet */}
         <TimerBottomSheet
           visible={showTimer}
-          onClose={() => setShowTimer(false)}
+          onClose={() => {
+            setShowTimer(false);
+            if (isRunning) {
+              setShowFloatingTimer(true);
+            }
+          }}
           date={selectedDate}
           slotIndex={selectedSlotIndex}
           initialName={
@@ -335,8 +384,30 @@ export default function HomeScreen() {
                 })():
               'Study Session'
           }
-          onTimerStopped={loadTracker}
+          onTimerStopped={() => {
+            loadTracker();
+            setShowFloatingTimer(false);
+          }}
         />
+
+        {/* Streak Animation */}
+        {showStreakAnimation && (
+          <StreakAnimation
+            streak={streak}
+            onComplete={() => setShowStreakAnimation(false)}
+          />
+        )}
+
+        {/* Floating PiP Timer */}
+        {showFloatingTimer && (
+          <FloatingTimer
+            onClose={() => setShowFloatingTimer(false)}
+            onFullscreen={() => {
+              setShowFloatingTimer(false);
+              router.push('/timer');
+            }}
+          />
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -375,6 +446,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.9,
+    marginTop: 4,
   },
   streakBadge: {
     flexDirection: 'row',
