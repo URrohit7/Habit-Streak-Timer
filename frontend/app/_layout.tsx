@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,7 +20,7 @@ const QuotesIcon = ({ color, size }: any) => (
 );
 
 const PomodoroIcon = ({ color, size }: any) => (
-  <Text style={{ fontSize: size }}>🕯️</Text>
+  <Text style={{ fontSize: size, lineHeight: size + 4 }}>🕯️</Text>
 );
 
 export default function Layout() {
