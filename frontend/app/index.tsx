@@ -103,6 +103,12 @@ export default function HomeScreen() {
     }
   };
 
+  const updateField = (field: string, value: any) => {
+    const updated = { ...tracker, [field]: value };
+    setTracker(updated);
+    saveTracker(updated);
+  };
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);

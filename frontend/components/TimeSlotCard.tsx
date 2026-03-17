@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -28,6 +29,7 @@ export default function TimeSlotCard({
   subjects,
 }: TimeSlotCardProps) {
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const updateField = (field: string, value: any) => {
     onUpdate({ ...slot, [field]: value });
@@ -35,6 +37,15 @@ export default function TimeSlotCard({
 
   const toggleCheckbox = (field: 'practice' | 'revision') => {
     onUpdate({ ...slot, [field]: !slot[field] });
+  };
+
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
+    onDelete();
   };
 
   const formatTime = (seconds: number) => {
@@ -54,7 +65,7 @@ export default function TimeSlotCard({
         </View>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={onDelete}
+          onPress={handleDelete}
         >
           <Ionicons name="trash-outline" size={18} color="#ef4444" />
         </TouchableOpacity>
@@ -86,7 +97,7 @@ export default function TimeSlotCard({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.deleteIconButton}
-            onPress={onDelete}
+            onPress={handleDelete}
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
           </TouchableOpacity>
@@ -210,6 +221,38 @@ export default function TimeSlotCard({
                 </TouchableOpacity>
               )}
             />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirm}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDeleteConfirm(false)}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModal}>
+            <Ionicons name="warning" size={48} color="#ef4444" />
+            <Text style={styles.deleteTitle}>Delete Time Slot?</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to delete this time slot?
+            </Text>
+            <View style={styles.deleteButtons}>
+              <TouchableOpacity
+                style={styles.cancelDeleteButton}
+                onPress={() => setShowDeleteConfirm(false)}
+              >
+                <Text style={styles.cancelDeleteText}>Go Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmDeleteButton}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.confirmDeleteText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -408,5 +451,62 @@ const styles = StyleSheet.create({
   subjectItemText: {
     fontSize: 16,
     color: '#1f2937',
+  },
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteModal: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 32,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  deleteTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  deleteMessage: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  cancelDeleteButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  cancelDeleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  confirmDeleteButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+  },
+  confirmDeleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });
