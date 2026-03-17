@@ -18,6 +18,10 @@ const QuotesIcon = ({ color, size }: any) => (
   <Ionicons name="bulb" size={size} color={color} />
 );
 
+const PomodoroIcon = ({ color, size }: any) => (
+  <Text style={{ fontSize: size }}>🕯️</Text>
+);
+
 export default function Layout() {
   return (
     <Tabs
@@ -65,6 +69,13 @@ export default function Layout() {
         options={{
           title: 'Quotes',
           tabBarIcon: QuotesIcon,
+        }}
+      />
+      <Tabs.Screen
+        name="pomodoro"
+        options={{
+          title: '',
+          tabBarIcon: PomodoroIcon,
         }}
       />
     </Tabs>
