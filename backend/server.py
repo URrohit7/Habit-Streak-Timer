@@ -91,20 +91,20 @@ class Quote(BaseModel):
     author: str
     category: str
 
-# Default time slots based on PDF
+# Default time slots based on PDF - EMPTY by default (no pre-filled content)
 DEFAULT_TIME_SLOTS = [
-    {"timeRange": "9:00-10:30 AM", "isBreak": False},
-    {"timeRange": "10:30-10:45 AM", "isBreak": True, "subject": "Short Break"},
-    {"timeRange": "10:45 AM-12:15 PM", "isBreak": False},
-    {"timeRange": "12:15-1:00 PM", "isBreak": True, "subject": "Lunch Break"},
-    {"timeRange": "1:00-2:30 PM", "isBreak": False},
-    {"timeRange": "2:30-2:45 PM", "isBreak": True, "subject": "Short Break"},
-    {"timeRange": "2:45-4:15 PM", "isBreak": False},
-    {"timeRange": "4:15-4:30 PM", "isBreak": True, "subject": "Short Break"},
-    {"timeRange": "4:30-6:00 PM", "isBreak": False},
-    {"timeRange": "6:00-7:00 PM", "isBreak": True, "subject": "Dinner Break"},
-    {"timeRange": "7:00-8:30 PM", "isBreak": False},
-    {"timeRange": "8:30-10:00 PM", "isBreak": False},
+    {"timeRange": "9:00-10:30 AM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "10:30-10:45 AM", "subject": "Short Break", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": True},
+    {"timeRange": "10:45 AM-12:15 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "12:15-1:00 PM", "subject": "Lunch Break", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": True},
+    {"timeRange": "1:00-2:30 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "2:30-2:45 PM", "subject": "Short Break", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": True},
+    {"timeRange": "2:45-4:15 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "4:15-4:30 PM", "subject": "Short Break", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": True},
+    {"timeRange": "4:30-6:00 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "6:00-7:00 PM", "subject": "Dinner Break", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": True},
+    {"timeRange": "7:00-8:30 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
+    {"timeRange": "8:30-10:00 PM", "subject": "", "topic": "", "practice": False, "revision": False, "notes": "", "timeSpent": 0, "remarks": "", "isBreak": False},
 ]
 
 # Motivational Quotes Database - Expanded with CEO and Leader Quotes
@@ -207,13 +207,13 @@ async def get_tracker(date_str: str):
     tracker = await db.trackers.find_one({"date": date_str})
     
     if not tracker:
-        # Create default tracker for this date
+        # Create default tracker for this date - EMPTY/FRESH state
         new_tracker = {
             "date": date_str,
             "day": "",
             "totalStudyHours": {"hrs": 0, "min": 0},
             "mood": 3,
-            "timeSlots": [TimeSlot(**slot).dict() for slot in DEFAULT_TIME_SLOTS],
+            "timeSlots": DEFAULT_TIME_SLOTS,  # Now properly structured and empty
             "dailyReflection": DailyReflection().dict(),
             "isCompleted": False,
             "createdAt": datetime.utcnow(),

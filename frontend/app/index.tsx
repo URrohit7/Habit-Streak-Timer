@@ -161,6 +161,7 @@ export default function HomeScreen() {
     
     setSelectedSlotIndex(index);
     setShowTimer(true);
+    // Timer will automatically show FloatingTimer when minimized via onClose handler
   };
 
   const calculateTodayStudyHours = () => {
@@ -259,7 +260,10 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.input}
                   value={tracker?.date || ''}
-                  editable={false}
+                  onChangeText={(text) => {
+                    setSelectedDate(text);
+                    updateField('date', text);
+                  }}
                   placeholder="YYYY-MM-DD"
                 />
               </View>
