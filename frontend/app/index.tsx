@@ -10,10 +10,12 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import TimeSlotCard from '../components/TimeSlotCard';
 import DailyReflectionSection from '../components/DailyReflectionSection';
@@ -46,6 +48,8 @@ export default function HomeScreen() {
   const [showStreakAnimation, setShowStreakAnimation] = useState(false);
   const [showFloatingTimer, setShowFloatingTimer] = useState(false);
   const [todayStudyHours, setTodayStudyHours] = useState('0h 0m');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
   
   const { isRunning, timerName, startTimer } = useTimerStore();
 
@@ -99,10 +103,36 @@ export default function HomeScreen() {
     }
   };
 
-  const updateField = (field: string, value: any) => {
-    const updated = { ...tracker, [field]: value };
-    setTracker(updated);
-    saveTracker(updated);
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      const dateString = format(selectedDate, 'yyyy-MM-dd');
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // Check if date is in the future
+      if (selectedDate > new Date()) {
+        Alert.alert('Invalid Date', 'You cannot select a future date. Please choose today or a past date.');
+        return;
+      }
+      
+      setTempDate(selectedDate);
+      setSelectedDate(dateString);
+      
+      if (Platform.OS === 'ios') {
+        // iOS shows Done button
+      } else {
+        // Android auto-applies
+        loadTracker();
+      }
+    }
+  };
+
+  const confirmDateSelection = () => {
+    setShowDatePicker(false);
+    loadTracker();
   };
 
   const updateTimeSlot = (index: number, updatedSlot: any) => {
@@ -257,15 +287,13 @@ export default function HomeScreen() {
             <View style={styles.row}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>DATE</Text>
-                <TextInput
-                  style={styles.input}
-                  value={tracker?.date || ''}
-                  onChangeText={(text) => {
-                    setSelectedDate(text);
-                    updateField('date', text);
-                  }}
-                  placeholder="YYYY-MM-DD"
-                />
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#6366f1" />
+                  <Text style={styles.dateText}>{tracker?.date || selectedDate}</Text>
+                </TouchableOpacity>
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>DAY</Text>
@@ -277,6 +305,45 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+
+            {/* Date Picker Modal */}
+            {showDatePicker && (
+              <Modal
+                transparent={true}
+                animationType="fade"
+                visible={showDatePicker}
+                onRequestClose={() => setShowDatePicker(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.datePickerModal}>
+                    <Text style={styles.datePickerTitle}>Select Date</Text>
+                    <Text style={styles.datePickerSubtitle}>Choose today or a past date</Text>
+                    <DateTimePicker
+                      value={tempDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      maximumDate={new Date()}
+                      style={styles.datePicker}
+                    />
+                    <View style={styles.datePickerButtons}>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.confirmButton}
+                        onPress={confirmDateSelection}
+                      >
+                        <Text style={styles.confirmButtonText}>Confirm</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+            )}
 
             {/* Mood Selector */}
             <View style={styles.moodSection}>
@@ -505,6 +572,79 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 14,
     backgroundColor: '#f9fafb',
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#f9fafb',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#1f2937',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  datePickerModal: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+  },
+  datePickerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  datePickerSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  datePicker: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  datePickerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   moodSection: {
     marginTop: 8,

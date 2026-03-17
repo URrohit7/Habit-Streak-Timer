@@ -15,10 +15,10 @@ import * as Animatable from 'react-native-animatable';
 const { width } = Dimensions.get('window');
 
 export default function CandleTimer() {
-  const [duration, setDuration] = useState(25); // minutes
+  const [duration, setDuration] = useState(25); // Default 25 minutes
   const [timeLeft, setTimeLeft] = useState(0); // seconds
   const [isRunning, setIsRunning] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(true); // Show settings first
   const [candleHeight] = useState(new Animated.Value(1));
   const [flameOpacity] = useState(new Animated.Value(1));
 
