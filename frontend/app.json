@@ -1,22 +1,35 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Study Tracker",
+    "slug": "study-tracker-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "studytracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "owner": "rohitkarna",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rohitkarna.studytracker",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take photos for study notes",
+        "NSPhotoLibraryUsageDescription": "Attach images to study notes"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#6366f1"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.rohitkarna.studytracker",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,13 +44,24 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#6366f1"
         }
       ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "updates": {
+      "url": ""
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
