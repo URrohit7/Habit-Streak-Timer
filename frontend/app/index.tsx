@@ -170,23 +170,10 @@ export default function HomeScreen() {
   };
 
   const deleteTimeSlot = (index: number) => {
-    Alert.alert(
-      'Delete Time Slot',
-      'Are you sure you want to delete this time slot?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const updatedSlots = tracker.timeSlots.filter((_: any, i: number) => i !== index);
-            const updated = { ...tracker, timeSlots: updatedSlots };
-            setTracker(updated);
-            saveTracker(updated);
-          },
-        },
-      ]
-    );
+    const updatedSlots = tracker.timeSlots.filter((_: any, i: number) => i !== index);
+    const updated = { ...tracker, timeSlots: updatedSlots };
+    setTracker(updated);
+    saveTracker(updated);
   };
 
   const openTimerForSlot = (index: number) => {
@@ -436,6 +423,9 @@ export default function HomeScreen() {
           <View style={styles.footer}>
             <Text style={styles.footerQuote}>
               "Stay Focused. Stay Consistent."
+            </Text>
+            <Text style={styles.footerCredit}>
+              Created by Rohit Karna
             </Text>
           </View>
         </ScrollView>
@@ -750,5 +740,12 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#6b7280',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  footerCredit: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });

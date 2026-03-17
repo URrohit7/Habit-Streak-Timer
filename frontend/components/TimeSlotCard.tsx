@@ -60,8 +60,18 @@ export default function TimeSlotCard({
       <View style={[styles.card, styles.breakCard]}>
         <View style={styles.breakHeader}>
           <Ionicons name="cafe" size={20} color="#f59e0b" />
-          <Text style={styles.breakTime}>{slot.timeRange}</Text>
-          <Text style={styles.breakLabel}>{slot.subject}</Text>
+          <TextInput
+            style={styles.breakTimeInput}
+            value={slot.timeRange}
+            onChangeText={(text) => updateField('timeRange', text)}
+            placeholder="Time"
+          />
+          <TextInput
+            style={styles.breakLabelInput}
+            value={slot.subject}
+            onChangeText={(text) => updateField('subject', text)}
+            placeholder="Break name"
+          />
         </View>
         <TouchableOpacity
           style={styles.deleteButton}
@@ -283,9 +293,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400e',
   },
+  breakTimeInput: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#92400e',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(146, 64, 14, 0.3)',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    minWidth: 100,
+  },
   breakLabel: {
     fontSize: 14,
     color: '#92400e',
+  },
+  breakLabelInput: {
+    fontSize: 14,
+    color: '#92400e',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(146, 64, 14, 0.3)',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    flex: 1,
   },
   cardHeader: {
     flexDirection: 'row',
