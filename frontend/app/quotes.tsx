@@ -26,10 +26,13 @@ export default function QuotesScreen() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readIndices, setReadIndices] = useState<number[]>([]);
+  const [filterMode, setFilterMode] = useState<'all' | 'unread' | 'read'>('all');
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
     loadQuotes();
+    loadReadStatus();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -40,12 +43,10 @@ export default function QuotesScreen() {
   const loadQuotes = async () => {
     try {
       setLoading(true);
-      // Load daily quote
       const dailyResponse = await fetch(`${BACKEND_URL}/api/quotes/daily`);
       const daily = await dailyResponse.json();
       setDailyQuote(daily);
 
-      // Load all quotes
       const allResponse = await fetch(`${BACKEND_URL}/api/quotes/all`);
       const all = await allResponse.json();
       setQuotes(all);
@@ -53,6 +54,28 @@ export default function QuotesScreen() {
       console.error('Error loading quotes:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadReadStatus = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/quotes/read`);
+      const data = await response.json();
+      setReadIndices(data.readIndices || []);
+    } catch (error) {
+      console.error('Error loading read status:', error);
+    }
+  };
+
+  const toggleReadStatus = async (index: number) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/quotes/read/${index}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      setReadIndices(data.readIndices || []);
+    } catch (error) {
+      console.error('Error toggling read status:', error);
     }
   };
 
@@ -88,6 +111,18 @@ export default function QuotesScreen() {
       console.error('Error getting random quote:', error);
     }
   };
+
+  const getFilteredQuotes = () => {
+    if (filterMode === 'read') {
+      return quotes.filter((_, index) => readIndices.includes(index));
+    }
+    if (filterMode === 'unread') {
+      return quotes.filter((_, index) => !readIndices.includes(index));
+    }
+    return quotes;
+  };
+
+  const filteredQuotes = getFilteredQuotes();
 
   if (loading) {
     return (
@@ -131,30 +166,83 @@ export default function QuotesScreen() {
           </Animated.View>
         )}
 
+        {/* Filter Tabs */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[styles.filterTab, filterMode === 'all' && styles.filterTabActive]}
+            onPress={() => setFilterMode('all')}
+          >
+            <Text style={[styles.filterTabText, filterMode === 'all' && styles.filterTabTextActive]}>
+              All ({quotes.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterTab, filterMode === 'unread' && styles.filterTabActive]}
+            onPress={() => setFilterMode('unread')}
+          >
+            <Text style={[styles.filterTabText, filterMode === 'unread' && styles.filterTabTextActive]}>
+              Unread ({quotes.length - readIndices.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterTab, filterMode === 'read' && styles.filterTabActive]}
+            onPress={() => setFilterMode('read')}
+          >
+            <Text style={[styles.filterTabText, filterMode === 'read' && styles.filterTabTextActive]}>
+              Read ({readIndices.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* All Quotes List */}
         <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>All Quotes</Text>
-          <Text style={styles.listSubtitle}>{quotes.length} inspirational quotes</Text>
+          <Text style={styles.listTitle}>
+            {filterMode === 'all' ? 'All Quotes' : filterMode === 'read' ? 'Read Quotes' : 'Unread Quotes'}
+          </Text>
+          <Text style={styles.listSubtitle}>{filteredQuotes.length} quotes</Text>
         </View>
 
         <FlashList
-          data={quotes}
+          data={filteredQuotes}
           estimatedItemSize={150}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.quoteCard}>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+          keyExtractor={(item, index) => `${item.author}-${index}`}
+          renderItem={({ item, index: filteredIndex }) => {
+            // Find the original index in the full quotes array
+            const originalIndex = quotes.findIndex(
+              (q) => q.text === item.text && q.author === item.author
+            );
+            const isRead = readIndices.includes(originalIndex);
+            
+            return (
+              <View style={[styles.quoteCard, isRead && styles.quoteCardRead]}>
+                <View style={styles.quoteCardHeader}>
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.readButton, isRead && styles.readButtonActive]}
+                    onPress={() => toggleReadStatus(originalIndex)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons
+                      name={isRead ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                      size={24}
+                      color={isRead ? '#10b981' : '#d1d5db'}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.quoteText, isRead && styles.quoteTextRead]}>
+                  "{item.text}"
+                </Text>
+                <View style={styles.quoteFooter}>
+                  <Text style={styles.authorText}>— {item.author}</Text>
+                  <TouchableOpacity onPress={() => handleShare(item)}>
+                    <Ionicons name="share-social-outline" size={20} color="#6b7280" />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <Text style={styles.quoteText}>"{item.text}"</Text>
-              <View style={styles.quoteFooter}>
-                <Text style={styles.authorText}>— {item.author}</Text>
-                <TouchableOpacity onPress={() => handleShare(item)}>
-                  <Ionicons name="share-social-outline" size={20} color="#6b7280" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            );
+          }}
           contentContainerStyle={styles.listContent}
         />
       </View>
@@ -256,6 +344,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6366f1',
   },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  filterTabActive: {
+    backgroundColor: '#6366f1',
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  filterTabTextActive: {
+    color: '#ffffff',
+  },
   listHeader: {
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -282,13 +395,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
+  quoteCardRead: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
+  },
+  quoteCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   categoryBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#eef2ff',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginBottom: 12,
   },
   categoryText: {
     fontSize: 11,
@@ -296,12 +418,19 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     textTransform: 'uppercase',
   },
+  readButton: {
+    padding: 4,
+  },
+  readButtonActive: {},
   quoteText: {
     fontSize: 16,
     lineHeight: 24,
     color: '#1f2937',
     fontStyle: 'italic',
     marginBottom: 12,
+  },
+  quoteTextRead: {
+    color: '#4b5563',
   },
   quoteFooter: {
     flexDirection: 'row',

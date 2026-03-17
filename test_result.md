@@ -119,6 +119,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "All tracker CRUD APIs tested successfully. GET tracker creates default slots, POST updates work, complete tracker functionality works, recent list returns proper data. Minor issue: invalid date formats accepted (returns tracker) but core functionality works perfectly."
+      - working: true
+        agent: "testing"
+        comment: "RETESTED - All tracker CRUD APIs working perfectly. GET /api/tracker/{date} returns tracker with 12 default time slots, POST /api/tracker successfully updates with realistic study data, GET /api/tracker/recent/list retrieves trackers properly, POST /api/tracker/complete/{date} marks day complete and increments streak correctly."
   
   - task: "Timer Management APIs"
     implemented: true
@@ -155,6 +158,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "FIXED: Streak calculation now working correctly. Consecutive days properly increment streak (tested: day 1 -> streak 1, day 2 -> streak 2). Duplicate day completion handled properly. Longest streak tracking works."
+      - working: true
+        agent: "testing"
+        comment: "RETESTED - Streak calculation working perfectly. GET /api/streak returns proper streak data with currentStreak, longestStreak, and completedDates. Mark day complete correctly increments streak (tested with consecutive days 2026-03-17 -> 2026-03-18, streak incremented from 1 to 2)."
   
   - task: "Motivational Quotes APIs"
     implemented: true
@@ -170,6 +176,24 @@ backend:
       - working: true
         agent: "testing"
         comment: "All quote APIs working perfectly. Daily quote consistent for same day, random quote returns different quotes, all quotes returns complete set of 15 motivational quotes with proper structure."
+      - working: true
+        agent: "testing"
+        comment: "RETESTED - All quotes APIs working perfectly. Now returns 66 quotes including quotes from Atomic Habits, Ikigai, and Zero to One as requested. Daily quote consistent, random quotes functional."
+
+  - task: "Mark as Read Quotes API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "NEW FEATURE: Implemented GET /api/quotes/read (returns read indices), POST /api/quotes/read/{index} (toggles read status)"
+      - working: true
+        agent: "testing"
+        comment: "Mark as Read functionality working perfectly. GET /api/quotes/read returns readIndices array. POST /api/quotes/read/{index} correctly toggles between marked_read and unmarked actions. Tested with quote index 0 - first call marked as read, second call unmarked successfully."
   
   - task: "Time Slot Management APIs"
     implemented: true
@@ -185,6 +209,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Time slot management working correctly. Add new slots successfully, delete slots by index works, proper validation for invalid indices and non-existent trackers."
+      - working: true
+        agent: "testing"
+        comment: "RETESTED - Time slot management working perfectly. DELETE /api/tracker/{date}/timeslot/{index} successfully removes time slots at valid indices, properly validates and rejects invalid indices (returns 400 error as expected), tracker updates correctly after deletion."
 
 frontend:
   - task: "Bottom Tab Navigation (Home, Calendar, Timer, Quotes)"
@@ -300,3 +327,7 @@ agent_communication:
     message: "Initial MVP implementation complete. All backend APIs implemented and frontend screens built. Backend APIs manually tested and working. Please test all backend endpoints thoroughly: 1) Tracker CRUD operations, 2) Timer start/stop/pause/resume, 3) Streak calculation with consecutive days, 4) Quotes endpoints, 5) Time slot add/delete. Focus on edge cases like marking same day twice, streak calculation across non-consecutive dates, timer state persistence."
   - agent: "testing"
     message: "BACKEND TESTING COMPLETE - SUCCESS RATE 95.0% (19/20 tests passed). All major APIs working correctly after fixes applied during testing. CRITICAL ISSUES RESOLVED: 1) Timer start ObjectId serialization error - FIXED by excluding _id from response dict, 2) Streak calculation variable scoping issue - FIXED by properly defining new_streak variable, 3) Timer API parameter handling - FIXED by using query parameters instead of JSON body for update/lap endpoints. All core functionality verified with comprehensive test suite including realistic student study data. Only minor issues remain (invalid date validation). Backend is production-ready."
+  - agent: "main"
+    message: "UPDATES: 1) Added 20+ new quotes from Atomic Habits, Ikigai, Zero to One (now 66 total), 2) Added Mark as Read endpoints (GET /api/quotes/read, POST /api/quotes/read/{index}), 3) Fixed debounced saving in frontend to reduce API calls during typing, 4) Fixed delete modal for break cards. Please test: a) All quote endpoints including new mark-as-read feature, b) Tracker CRUD still working, c) Streak calculation, d) Time slot delete endpoint."
+  - agent: "testing"
+    message: "FINAL BACKEND TESTING COMPLETE - SUCCESS RATE 100% (18/18 tests passed). ALL HIGH PRIORITY FEATURES VERIFIED: 1) New Quotes APIs: GET /api/quotes/all returns 66 quotes including Atomic Habits, Ikigai, Zero to One; Daily/random quote APIs working. 2) Mark as Read: GET /api/quotes/read and POST /api/quotes/read/{index} toggle functionality working perfectly. 3) All existing APIs retested and confirmed working: Tracker CRUD, Streak calculation with consecutive day increment, Time slot deletion. NO CRITICAL ISSUES FOUND. Backend fully production-ready with all requested features implemented and verified."

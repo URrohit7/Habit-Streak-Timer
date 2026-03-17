@@ -76,9 +76,42 @@ export default function TimeSlotCard({
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={handleDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="trash-outline" size={18} color="#ef4444" />
         </TouchableOpacity>
+
+        {/* Delete Confirmation Modal for Break Cards */}
+        <Modal
+          visible={showDeleteConfirm}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowDeleteConfirm(false)}
+        >
+          <View style={styles.deleteModalOverlay}>
+            <View style={styles.deleteModal}>
+              <Ionicons name="warning" size={48} color="#ef4444" />
+              <Text style={styles.deleteTitle}>Delete Break Slot?</Text>
+              <Text style={styles.deleteMessage}>
+                Are you sure you want to delete this break slot?
+              </Text>
+              <View style={styles.deleteButtons}>
+                <TouchableOpacity
+                  style={styles.cancelDeleteButton}
+                  onPress={() => setShowDeleteConfirm(false)}
+                >
+                  <Text style={styles.cancelDeleteText}>Go Back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmDeleteButton}
+                  onPress={confirmDelete}
+                >
+                  <Text style={styles.confirmDeleteText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -108,6 +141,7 @@ export default function TimeSlotCard({
           <TouchableOpacity
             style={styles.deleteIconButton}
             onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
           </TouchableOpacity>

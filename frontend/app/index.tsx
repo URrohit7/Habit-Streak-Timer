@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -52,6 +52,9 @@ export default function HomeScreen() {
   const [tempDate, setTempDate] = useState(new Date());
   
   const { isRunning, timerName, startTimer } = useTimerStore();
+  
+  // Debounce ref for saving
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadTracker();
@@ -64,6 +67,15 @@ export default function HomeScreen() {
       calculateTodayStudyHours();
     }
   }, [tracker]);
+
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadTracker = async () => {
     try {
@@ -97,16 +109,26 @@ export default function HomeScreen() {
         body: JSON.stringify(updatedTracker),
       });
       const data = await response.json();
-      setTracker(data);
+      // Don't update tracker state from response to avoid overwriting in-progress edits
     } catch (error) {
       console.error('Error saving tracker:', error);
     }
   };
 
+  // Debounced save - only saves after 800ms of inactivity
+  const debouncedSave = useCallback((updatedTracker: any) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveTracker(updatedTracker);
+    }, 800);
+  }, []);
+
   const updateField = (field: string, value: any) => {
     const updated = { ...tracker, [field]: value };
     setTracker(updated);
-    saveTracker(updated);
+    debouncedSave(updated);
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -146,7 +168,7 @@ export default function HomeScreen() {
     updatedSlots[index] = updatedSlot;
     const updated = { ...tracker, timeSlots: updatedSlots };
     setTracker(updated);
-    saveTracker(updated);
+    debouncedSave(updated);
   };
 
   const addTimeSlot = () => {
@@ -239,7 +261,7 @@ export default function HomeScreen() {
     const updatedReflection = { ...tracker.dailyReflection, [field]: value };
     const updated = { ...tracker, dailyReflection: updatedReflection };
     setTracker(updated);
-    saveTracker(updated);
+    debouncedSave(updated);
   };
 
   if (loading) {

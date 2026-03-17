@@ -172,6 +172,32 @@ MOTIVATIONAL_QUOTES = [
     {"text": "Let your joy be in your journey—not in some distant goal.", "author": "Tim Cook", "category": "journey"},
     {"text": "Life is fragile. We're not guaranteed a tomorrow, so give it everything you've got.", "author": "Tim Cook", "category": "urgency"},
     
+    # Atomic Habits by James Clear
+    {"text": "You do not rise to the level of your goals. You fall to the level of your systems.", "author": "James Clear, Atomic Habits", "category": "habits"},
+    {"text": "Every action you take is a vote for the type of person you wish to become.", "author": "James Clear, Atomic Habits", "category": "identity"},
+    {"text": "Habits are the compound interest of self-improvement.", "author": "James Clear, Atomic Habits", "category": "habits"},
+    {"text": "The task of breaking a bad habit is like uprooting a powerful oak within us.", "author": "James Clear, Atomic Habits", "category": "discipline"},
+    {"text": "Be the designer of your world and not merely the consumer of it.", "author": "James Clear, Atomic Habits", "category": "habits"},
+    {"text": "Success is the product of daily habits—not once-in-a-lifetime transformations.", "author": "James Clear, Atomic Habits", "category": "consistency"},
+    {"text": "You should be far more concerned with your current trajectory than with your current results.", "author": "James Clear, Atomic Habits", "category": "growth"},
+    {"text": "The most effective way to change your habits is to focus not on what you want to achieve, but on who you wish to become.", "author": "James Clear, Atomic Habits", "category": "identity"},
+    
+    # Ikigai by Héctor García and Francesc Miralles
+    {"text": "There is a tension between what is good for someone and what they want to do. This is because people, especially older people, parsing the best of what they want to do.", "author": "Héctor García, Ikigai", "category": "purpose"},
+    {"text": "Our ikigai is different for all of us, but one thing we have in common is that we are all searching for meaning.", "author": "Héctor García, Ikigai", "category": "purpose"},
+    {"text": "To stay active and to not retire. Those who give up the things they love doing lose their purpose in life.", "author": "Héctor García, Ikigai", "category": "purpose"},
+    {"text": "Only staying active will make you want to live a hundred years.", "author": "Japanese proverb, Ikigai", "category": "vitality"},
+    {"text": "If you want to stay busy and active, don't stop doing things you love.", "author": "Héctor García, Ikigai", "category": "passion"},
+    {"text": "Flow is the state in which people are so involved in an activity that nothing else seems to matter.", "author": "Héctor García, Ikigai", "category": "focus"},
+    
+    # Zero to One by Peter Thiel
+    {"text": "The most contrarian thing of all is not to oppose the crowd but to think for yourself.", "author": "Peter Thiel, Zero to One", "category": "thinking"},
+    {"text": "Brilliant thinking is rare, but courage is in even shorter supply than genius.", "author": "Peter Thiel, Zero to One", "category": "courage"},
+    {"text": "Every moment in business happens only once. The next Bill Gates will not build an operating system.", "author": "Peter Thiel, Zero to One", "category": "innovation"},
+    {"text": "Doing what we already know how to do takes the world from 1 to n. But every new creation goes from 0 to 1.", "author": "Peter Thiel, Zero to One", "category": "creation"},
+    {"text": "If your goal is to never make a mistake in your life, you shouldn't look for secrets.", "author": "Peter Thiel, Zero to One", "category": "risk-taking"},
+    {"text": "A startup messed up at its foundation cannot be fixed.", "author": "Peter Thiel, Zero to One", "category": "foundation"},
+    
     # Inspirational Study Quotes
     {"text": "It's not too late. You can start today.", "author": "Unknown", "category": "beginning"},
     {"text": "Every expert was once a beginner. Every master was once a disaster.", "author": "T. Harv Eker", "category": "growth"},
@@ -475,6 +501,40 @@ async def get_random_quote():
 async def get_all_quotes():
     """Get all motivational quotes"""
     return MOTIVATIONAL_QUOTES
+
+# Mark as Read Routes for Quotes
+@api_router.get("/quotes/read")
+async def get_read_quotes():
+    """Get list of read quote indices"""
+    read_data = await db.read_quotes.find_one()
+    if not read_data:
+        return {"readIndices": []}
+    return {"readIndices": read_data.get("readIndices", [])}
+
+@api_router.post("/quotes/read/{quote_index}")
+async def toggle_quote_read(quote_index: int):
+    """Toggle a quote's read status"""
+    read_data = await db.read_quotes.find_one()
+    
+    if not read_data:
+        await db.read_quotes.insert_one({"readIndices": [quote_index]})
+        return {"readIndices": [quote_index], "action": "marked_read"}
+    
+    read_indices = read_data.get("readIndices", [])
+    
+    if quote_index in read_indices:
+        read_indices.remove(quote_index)
+        action = "unmarked"
+    else:
+        read_indices.append(quote_index)
+        action = "marked_read"
+    
+    await db.read_quotes.update_one(
+        {"_id": read_data["_id"]},
+        {"$set": {"readIndices": read_indices}}
+    )
+    
+    return {"readIndices": read_indices, "action": action}
 
 # Add time slot to tracker
 @api_router.post("/tracker/{date_str}/timeslot")
