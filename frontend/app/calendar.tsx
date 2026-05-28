@@ -9,11 +9,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { useRouter } from 'expo-router';
+import { format } from 'date-fns';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -22,20 +21,34 @@ export default function CalendarScreen() {
   const [loading, setLoading] = useState(true);
   const [markedDates, setMarkedDates] = useState({});
 
-  useEffect(() => {
-    loadTrackers();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTrackers();
+    }, [])
+  );
 
   const loadTrackers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/tracker/recent/list`);
-      const data = await response.json();
-      setTrackers(data);
+      // Load all trackers from AsyncStorage
+      const allKeys = await AsyncStorage.getAllKeys();
+      const trackerKeys = allKeys.filter(key => key.startsWith('tracker_'));
+      
+      const trackersData = [];
+      for (const key of trackerKeys) {
+        const data = await AsyncStorage.getItem(key);
+        if (data) {
+          trackersData.push(JSON.parse(data));
+        }
+      }
+
+      // Sort by date
+      trackersData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setTrackers(trackersData);
 
       // Create marked dates object
       const marked: any = {};
-      data.forEach((tracker: any) => {
+      trackersData.forEach((tracker: any) => {
         marked[tracker.date] = {
           marked: true,
           dotColor: tracker.isCompleted ? '#10b981' : '#6366f1',
@@ -64,6 +77,17 @@ export default function CalendarScreen() {
     return (totalSeconds / 3600).toFixed(1);
   };
 
+  const handleDateSelect = (day: any) => {
+    setSelectedDate(day.dateString);
+    // Update marked dates
+    const newMarkedDates = { ...markedDates };
+    Object.keys(newMarkedDates).forEach(date => {
+      newMarkedDates[date].selected = date === day.dateString;
+      newMarkedDates[date].selectedColor = date === day.dateString ? '#6366f1' : undefined;
+    });
+    setMarkedDates(newMarkedDates);
+  };
+
   const selectedTracker = getTrackerForDate(selectedDate);
 
   return (
@@ -85,7 +109,7 @@ export default function CalendarScreen() {
             <View style={styles.calendarContainer}>
               <Calendar
                 current={selectedDate}
-                onDayPress={(day) => setSelectedDate(day.dateString)}
+                onDayPress={handleDateSelect}
                 markedDates={markedDates}
                 theme={{
                   todayTextColor: '#6366f1',
