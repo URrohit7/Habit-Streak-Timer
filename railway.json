@@ -1,7 +1,5 @@
 {
   "build": {
-    "builder": "dockerfile",
-    "dockerfile": "backend/Dockerfile"
-  },
-  "start": "cd backend && python server.py"
+    "builder": "dockerfile"
+  }
 }
