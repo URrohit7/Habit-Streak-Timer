@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Quote {
@@ -22,10 +21,29 @@ interface Quote {
   category: string;
 }
 
+// Local mock quotes data
+const MOCK_QUOTES: Quote[] = [
+  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier", category: "consistency" },
+  { text: "The expert in anything was once a beginner.", author: "Helen Hayes", category: "motivation" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson", category: "focus" },
+  { text: "Study while others are sleeping; work while others are loafing.", author: "William Arthur Ward", category: "dedication" },
+  { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King", category: "learning" },
+  { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki", category: "action" },
+  { text: "Small progress is still progress. Keep going!", author: "Unknown", category: "motivation" },
+  { text: "Focus on being productive instead of busy.", author: "Tim Ferriss", category: "productivity" },
+  { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown", category: "achievement" },
+  { text: "Don't stop when you're tired. Stop when you're done.", author: "Unknown", category: "perseverance" },
+  { text: "Strive for progress, not perfection.", author: "Unknown", category: "growth" },
+  { text: "Dream big, work hard, stay focused, and surround yourself with good people.", author: "Unknown", category: "success" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "passion" },
+  { text: "It is important to follow your dreams and heart. Do something that excites you.", author: "Sundar Pichai", category: "passion" },
+  { text: "You do not rise to the level of your goals. You fall to the level of your systems.", author: "James Clear", category: "habits" },
+];
+
 export default function QuotesScreen() {
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>(MOCK_QUOTES);
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [readIndices, setReadIndices] = useState<number[]>([]);
   const [filterMode, setFilterMode] = useState<'all' | 'unread' | 'read'>('all');
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -40,42 +58,26 @@ export default function QuotesScreen() {
     }).start();
   }, []);
 
-  const loadQuotes = async () => {
-    try {
-      setLoading(true);
-      const dailyResponse = await fetch(`${BACKEND_URL}/api/quotes/daily`);
-      const daily = await dailyResponse.json();
-      setDailyQuote(daily);
-
-      const allResponse = await fetch(`${BACKEND_URL}/api/quotes/all`);
-      const all = await allResponse.json();
-      setQuotes(all);
-    } catch (error) {
-      console.error('Error loading quotes:', error);
-    } finally {
-      setLoading(false);
-    }
+  const loadQuotes = () => {
+    // Get daily quote based on date
+    const today = new Date().toDateString();
+    const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const dailyIndex = seed % MOCK_QUOTES.length;
+    setDailyQuote(MOCK_QUOTES[dailyIndex]);
+    setQuotes(MOCK_QUOTES);
   };
 
-  const loadReadStatus = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/quotes/read`);
-      const data = await response.json();
-      setReadIndices(data.readIndices || []);
-    } catch (error) {
-      console.error('Error loading read status:', error);
-    }
+  const loadReadStatus = () => {
+    // Load from AsyncStorage if available
+    const savedIndices = readIndices;
+    setReadIndices(savedIndices);
   };
 
-  const toggleReadStatus = async (index: number) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/quotes/read/${index}`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      setReadIndices(data.readIndices || []);
-    } catch (error) {
-      console.error('Error toggling read status:', error);
+  const toggleReadStatus = (index: number) => {
+    if (readIndices.includes(index)) {
+      setReadIndices(readIndices.filter(i => i !== index));
+    } else {
+      setReadIndices([...readIndices, index]);
     }
   };
 
@@ -89,27 +91,22 @@ export default function QuotesScreen() {
     }
   };
 
-  const getRandomQuote = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/quotes/random`);
-      const quote = await response.json();
-      setDailyQuote(quote);
-      
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } catch (error) {
-      console.error('Error getting random quote:', error);
-    }
+  const getRandomQuote = () => {
+    const randomQuote = MOCK_QUOTES[Math.floor(Math.random() * MOCK_QUOTES.length)];
+    setDailyQuote(randomQuote);
+    
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const getFilteredQuotes = () => {
@@ -123,15 +120,6 @@ export default function QuotesScreen() {
   };
 
   const filteredQuotes = getFilteredQuotes();
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.loadingText}>Loading inspiration...</Text>
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
