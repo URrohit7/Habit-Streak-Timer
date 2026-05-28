@@ -289,6 +289,7 @@ async def mark_day_complete(date_str: str):
     
     # Update streak
     streak_data = await db.streaks.find_one()
+    new_streak = 1  # Default value
     
     if not streak_data:
         # Initialize streak
