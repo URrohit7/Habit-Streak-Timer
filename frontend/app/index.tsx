@@ -24,8 +24,7 @@ import StreakAnimation from '../components/StreakAnimation';
 import FloatingTimer from '../components/FloatingTimer';
 import { useTimerStore } from '../store/timerStore';
 import { useRouter } from 'expo-router';
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+import * as storageService from '../services/storageService';
 
 const MOOD_EMOJIS = ['😫', '😕', '😐', '😊', '🤩'];
 const DEFAULT_SUBJECTS = [
@@ -80,8 +79,7 @@ export default function HomeScreen() {
   const loadTracker = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/tracker/${selectedDate}`);
-      const data = await response.json();
+      const data = await storageService.getTracker(selectedDate);
       setTracker(data);
     } catch (error) {
       console.error('Error loading tracker:', error);
@@ -93,9 +91,8 @@ export default function HomeScreen() {
 
   const loadStreak = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/streak`);
-      const data = await response.json();
-      setStreak(data.currentStreak || 0);
+      const currentStreak = await storageService.getStreak();
+      setStreak(currentStreak);
     } catch (error) {
       console.error('Error loading streak:', error);
     }
@@ -103,13 +100,7 @@ export default function HomeScreen() {
 
   const saveTracker = async (updatedTracker: any) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/tracker`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTracker),
-      });
-      const data = await response.json();
-      // Don't update tracker state from response to avoid overwriting in-progress edits
+      await storageService.saveTracker(selectedDate, updatedTracker);
     } catch (error) {
       console.error('Error saving tracker:', error);
     }
@@ -235,17 +226,14 @@ export default function HomeScreen() {
           text: 'Complete',
           onPress: async () => {
             try {
-              const response = await fetch(`${BACKEND_URL}/api/tracker/complete/${selectedDate}`, {
-                method: 'POST',
-              });
-              const data = await response.json();
+              const result = await storageService.updateStreak(selectedDate);
               
               // Update local state
               await loadStreak();
               await loadTracker();
               
               // Show Duolingo-style streak animation
-              setStreak(data.streak);
+              setStreak(result.currentStreak);
               setShowStreakAnimation(true);
             } catch (error) {
               console.error('Error marking complete:', error);
